@@ -123,7 +123,11 @@ def covid_summary_for_a_specific_date(total_confirmed, total_deaths, total_recov
 
 
 def chloropleth_graph(total_confirmed_df):
-
+    """
+     Using this function we draw a chrolopleth graph using plotly. this takes one argument.
+    :param total_confirmed_df: the main dataframe on which we are drawing the graph.
+    :return: the desired figure.
+    """
     pd.set_option('mode.chained_assignment', None)
     fig = px.choropleth(total_confirmed_df,
                         locations='Country/Region', locationmode='country names',
@@ -139,6 +143,14 @@ def chloropleth_graph(total_confirmed_df):
 
 
 def SortByConfirmedAndDeathrate(total_confirmed_df, total_deaths_df):
+    """
+    Using this function we are going to see that which country is much more affected in Covid-19 if we sort the
+    dataframe, first with respect to Confirmed cases and after that death rate in descending order respectively.
+
+    :param total_confirmed_df: the dataframe containing the confirmed cases of all the countries.
+    :param total_deaths_df: the dataframe containing the death cases of all the countries.
+    :return: the required figure
+    """
     A = total_confirmed_df.copy()
     A['Deaths'] = total_deaths_df['Deaths']
     A['DeathRate'] = (A['Deaths'] / A['Confirmed'] * 100).round(2)
@@ -161,6 +173,11 @@ def SortByConfirmedAndDeathrate(total_confirmed_df, total_deaths_df):
 
 
 def DailyConfirmedCases():
+    """
+    here we are going to see the daily confirmed cases across all countries.
+
+    :return: the required figure.
+    """
     C = confirmed_df_melt.groupby('Date').aggregate(np.sum)
     C.index.name = 'Date'
     C['DailyConfirmed'] = C['Confirmed'].diff()
@@ -172,24 +189,39 @@ def DailyConfirmedCases():
 
 
 def DailyConfirmedCasesPer100k():
+    """
+    here we are going to see the daily confirmed cases per 100k across all countries.
+
+    :return: the required figure.
+    """
+
+    # Retrieving the population data for all countries
     url = "https://www.worldometers.info/world-population/population-by-country/"
     r = requests.get(url)
     bs = soup(r.content, 'html')
     table = bs.find_all('table')[0]
     population_df = pd.read_html(str(table))[0]
+
+    # Some basic preprocessing
     population_df.rename(columns={'Country (or dependency)': "Country/Region", "Population (2020)": "Population"},
                          inplace=True)
     population_df.drop(population_df.columns.difference(['Country/Region', 'Population']), axis=1, inplace=True)
     population_df.replace("United States", "US", inplace=True)
+
+    # Daily confirmed cases per 100k across all countries for previous 2 weeks
     today = datetime.datetime.now()
     minus14 = today - datetime.timedelta(weeks=2)
     minus14 = minus14.strftime("%Y/%m/%d")
     D = confirmed_df_melt.copy()
     D = D[D['Date'] >= minus14]
+
+    # Making the daily cases column
     D['Daily'] = D.groupby('Country/Region')['Confirmed'].diff()
     D.drop(['Date', 'Confirmed'], axis=1, inplace=True)
     D = D.groupby('Country/Region').sum()
     D = D.sort_values('Daily', ascending=False)
+
+    # Making the per100k column after merging the population dataframe with the Dataframe D
     E = pd.merge(left=D, right=population_df, left_on='Country/Region', right_on='Country/Region')
     E['per100k'] = (E['Daily'] * 100000) / E['Population']
     fig = px.bar(E.sort_values('per100k', ascending=False).head(30).round(2),

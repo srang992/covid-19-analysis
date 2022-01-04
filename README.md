@@ -10,3 +10,8 @@ Library used:
 1. Pandas
 2. Plotly
 3. Numpy
+
+to run this app, simply clone this project and run this command in terminal
+'''
+streamlit run app.py
+'''

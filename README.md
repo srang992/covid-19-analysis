@@ -12,6 +12,6 @@ Library used:
 3. Numpy
 
 to run this app, simply clone this project and run this command in terminal
-'''
+<code>
 streamlit run app.py
-'''
+</code>

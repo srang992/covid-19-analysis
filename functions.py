@@ -1,4 +1,3 @@
-
 import pandas as pd
 import numpy as np
 import plotly.express as px
@@ -7,11 +6,6 @@ from plotly.subplots import make_subplots
 import requests
 from bs4 import BeautifulSoup as soup
 import datetime
-
-
-confirmed_df_melt = pd.read_csv("datasets/covid_confirmed.csv")
-deaths_df_melt = pd.read_csv("datasets/covid_deaths.csv")
-recovered_df_melt = pd.read_csv("datasets/covid_recovered.csv")
 
 
 def clean_and_load_data():
@@ -60,6 +54,10 @@ def clean_and_load_data():
     deaths_df_melt['Date'] = deaths_df_melt['Date'].dt.strftime("%Y/%m/%d")
     recovered_df_melt['Date'] = recovered_df_melt['Date'].dt.strftime("%Y/%m/%d")
 
+    confirmed_df_melt.to_csv("datasets/covid_confirmed.csv", index=None)
+    deaths_df_melt.to_csv("datasets/covid_deaths.csv", index=None)
+    recovered_df_melt.to_csv("datasets/covid_recovered.csv", index=None)
+
 
 def load_saved_data(date):
     """
@@ -67,8 +65,11 @@ def load_saved_data(date):
     :param date: streamlit date input as a string.
     :return: total confirmed cases, total death cases, total recovered cases, total active cases.
     """
-
     date = date.strftime("%Y/%m/%d")
+
+    confirmed_df_melt = pd.read_csv("datasets/covid_confirmed.csv")
+    deaths_df_melt = pd.read_csv("datasets/covid_deaths.csv")
+    recovered_df_melt = pd.read_csv("datasets/covid_recovered.csv")
 
     total_confirmed_df = confirmed_df_melt[confirmed_df_melt['Date'] == date]
     total_deaths_df = deaths_df_melt[confirmed_df_melt['Date'] == date]
@@ -78,7 +79,6 @@ def load_saved_data(date):
 
 
 def total_cases(total_confirmed_df, total_deaths_df, total_recovered_df):
-
     total_confirmed = total_confirmed_df['Confirmed'].sum()
     total_deaths = total_deaths_df['Deaths'].sum()
     total_recovered = total_recovered_df['Recovered'].sum()
@@ -155,19 +155,19 @@ def SortByConfirmedAndDeathrate(total_confirmed_df, total_deaths_df):
     A['Deaths'] = total_deaths_df['Deaths']
     A['DeathRate'] = (A['Deaths'] / A['Confirmed'] * 100).round(2)
     fig1 = px.scatter(A.sort_values('Confirmed', ascending=False).head(20),
-                     x='Confirmed', y='Deaths', size='DeathRate', color='Country/Region')
+                      x='Confirmed', y='Deaths', size='DeathRate', color='Country/Region')
 
     B = A.copy()
     B = B.sort_values('Deaths', ascending=False).head(20)
 
     fig2 = make_subplots(specs=[[{'secondary_y': True}]])
     fig2.add_trace(go.Bar(x=B['Country/Region'], y=B['Deaths'],
-                         text=B['Deaths'], name='Deaths',
-                         textposition='auto'), secondary_y=False)
+                          text=B['Deaths'], name='Deaths',
+                          textposition='auto'), secondary_y=False)
 
     fig2.add_trace(go.Scatter(x=B['Country/Region'], y=B['DeathRate'],
-                             text=B['DeathRate'], name='DeathRate (%)',
-                             mode='markers+lines'), secondary_y=True)
+                              text=B['DeathRate'], name='DeathRate (%)',
+                              mode='markers+lines'), secondary_y=True)
 
     return fig1, fig2
 
@@ -178,6 +178,7 @@ def DailyConfirmedCases():
 
     :return: the required figure.
     """
+    confirmed_df_melt = pd.read_csv("datasets/covid_confirmed.csv")
     C = confirmed_df_melt.groupby('Date').aggregate(np.sum)
     C.index.name = 'Date'
     C['DailyConfirmed'] = C['Confirmed'].diff()
@@ -194,7 +195,7 @@ def DailyConfirmedCasesPer100k():
 
     :return: the required figure.
     """
-
+    confirmed_df_melt = pd.read_csv("datasets/covid_confirmed.csv")
     # Retrieving the population data for all countries
     url = "https://www.worldometers.info/world-population/population-by-country/"
     r = requests.get(url)
@@ -228,4 +229,3 @@ def DailyConfirmedCasesPer100k():
                  x="Country/Region", y="per100k", text="per100k")
 
     return fig
-
